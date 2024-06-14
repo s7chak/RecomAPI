@@ -13,9 +13,9 @@ CORS(app)
 # cred = credentials.ApplicationDefault()
 # firebase_admin.initialize_app(cred)
 # db = firestore.client()
-@app.route('/checkapp', methods=['GET'])
+@app.route('/', methods=['GET'])
 def check_app():
-    return jsonify('Up')
+    return jsonify('RecomAPI Up')
 @app.route('/checkdb', methods=['GET'])
 def check_db():
     cred = credentials.ApplicationDefault()
