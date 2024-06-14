@@ -1,8 +1,7 @@
 flask
 flask-session
 pandas
-plotly
-matplotlib
+fuzzywuzzy
 firebase-admin==6.5.0
 gunicorn
 google-cloud-storage
