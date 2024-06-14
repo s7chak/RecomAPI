@@ -3,6 +3,8 @@ flask-session
 flask-cors
 firebase-admin
 polars
+fuzzywuzzy
+tqdm
 gunicorn
 google-cloud-storage
 google-cloud-logging
