@@ -16,7 +16,7 @@ RUN pip install -r requirements.txt
 EXPOSE $PORT
 
 # Define environment variable
-ENV NAME FolioAPI
+ENV NAME RecomAPI
 
 # Run app.py when the container launches
 #CMD ["python", "app.py"]
