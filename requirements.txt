@@ -1,8 +1,6 @@
 flask
 flask-session
-pandas
-fuzzywuzzy
-firebase-admin==6.5.0
+firebase-admin
 gunicorn
 google-cloud-storage
 google-cloud-logging
