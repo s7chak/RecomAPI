@@ -10,9 +10,19 @@ from firebase_admin import credentials, firestore
 app = Flask(__name__)
 CORS(app)
 
-cred = credentials.ApplicationDefault()
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+# cred = credentials.ApplicationDefault()
+# firebase_admin.initialize_app(cred)
+# db = firestore.client()
+@app.route('/checkapp', methods=['GET'])
+def check_app():
+    return jsonify('Up')
+@app.route('/checkdb', methods=['GET'])
+def check_db():
+    cred = credentials.ApplicationDefault()
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+    return jsonify('DB')
+
 @app.route('/check', methods=['GET'])
 def check_books():
     try:
