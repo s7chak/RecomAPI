@@ -81,6 +81,6 @@ def local_tester():
 
 
 if __name__ == '__main__':
-    ops.load_books_into_dataframe()
-    app.run(debug=True)
+    # ops.load_books_into_dataframe()
+    app.run(host="0.0.0.0")
     # local_tester()
