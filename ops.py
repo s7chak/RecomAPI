@@ -14,7 +14,8 @@ firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-book_df = pl.read_csv('book_eng.csv')
+# book_df = pl.read_csv('book_eng.csv')
+book_df = None
 current_stack = None
 
 def load_books_into_dataframe(batch_size=10000):
