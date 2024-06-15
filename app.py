@@ -16,20 +16,12 @@ CORS(app)
 @app.route('/', methods=['GET'])
 def check_app():
     return jsonify('RecomAPI Up')
-@app.route('/checkdb', methods=['GET'])
-def check_db():
-    cred = credentials.ApplicationDefault()
-    firebase_admin.initialize_app(cred)
-    db = firestore.client()
-    return jsonify('DB')
 
 @app.route('/check', methods=['GET'])
 def check_books():
     try:
-        books_ref = db.collection('books')
-        docs = books_ref.limit(1).stream()
-        first_book = next(docs, None)
-        if first_book:
+        f = ops.check_db()
+        if f:
             book_data = first_book.to_dict()
             return jsonify(book_data), 200
         else:

@@ -11,12 +11,17 @@ from tqdm import tqdm
 
 cred = credentials.ApplicationDefault()
 firebase_admin.initialize_app(cred)
-
 db = firestore.client()
 
 # book_df = pl.read_csv('book_eng.csv')
 book_df = None
 current_stack = None
+
+def check_db():
+    books_ref = db.collection('books')
+    docs = books_ref.limit(1).stream()
+    first_book = next(docs, None)
+    return first_book
 
 def load_books_into_dataframe(batch_size=10000):
     global book_df
