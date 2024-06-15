@@ -15,7 +15,7 @@ CORS(app)
 # db = firestore.client()
 @app.route('/', methods=['GET'])
 def check_app():
-    return 'RecomAPI Up: 1.0'
+    return 'RecomAPI Up: 1.1'
 
 @app.route('/check', methods=['GET'])
 def check_books():

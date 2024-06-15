@@ -59,7 +59,7 @@ def load_books_into_dataframe(batch_size=10000):
         docs = books_ref.start_after(last_doc).limit(batch_size).stream()
 
     book_df = pl.DataFrame(all_books_data)
-    book_df.write_csv('book_eng.csv')
+    # book_df.write_csv('book_eng.csv')
     print(f'Total Unique Books: {str(book_df.shape[0])}')
     print(f"Fields: {str(book_df.columns)}")
 

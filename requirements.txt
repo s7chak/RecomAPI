@@ -2,6 +2,7 @@ flask
 flask-session
 flask-cors
 firebase-admin
+numpy
 polars
 fuzzywuzzy
 tqdm
