@@ -22,7 +22,7 @@ def check_books():
     try:
         f = ops.check_db()
         if f:
-            book_data = first_book.to_dict()
+            book_data = f.to_dict()
             return jsonify(book_data), 200
         else:
             return jsonify({"message": "No books found"}), 404
