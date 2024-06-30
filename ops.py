@@ -1,33 +1,45 @@
-import time
-from concurrent.futures import ThreadPoolExecutor
-
 import firebase_admin
 import polars as pl
+import requests
+import time
+from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor
 from firebase_admin import credentials, firestore
 from fuzzywuzzy import fuzz
 # from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from tqdm import tqdm
+from objects.Object import Paper
+#prod
+# cred = credentials.ApplicationDefault()
+book_df = None
 
-cred = credentials.ApplicationDefault()
+#local
+# cred = credentials.Certificate('/Users/subhayuchakravarty/.ssh/keys/recoms-firebase-adminsdk-uy0fv-11c9f64cce.json')
+# book_df = pl.read_csv('book_eng.csv')
+paper_list = None
+
 firebase_admin.initialize_app(cred)
 db = firestore.client()
-
-# book_df = pl.read_csv('book_eng.csv')
-book_df = None
-current_stack = None
-
+book_table = 'bookshelf'
 def check_db():
-    books_ref = db.collection('books')
+    books_ref = db.collection(book_table)
     docs = books_ref.limit(1).stream()
     first_book = next(docs, None)
     return first_book
+
+def count_total_books():
+    global book_df, current_stack
+    if book_df is None:
+        load_books_into_dataframe()
+    total = book_df.shape[0]
+    return total
 
 def load_books_into_dataframe(batch_size=10000):
     global book_df
     if book_df is not None:
         return
-    books_ref = db.collection('books')
+    books_ref = db.collection(book_table)
     query = books_ref.limit(batch_size)
 
     docs = query.stream()
@@ -82,6 +94,62 @@ def search_booklist_batch(batch_df, keywords=None, people=None):
     return df_filtered.to_dicts()
 
 
+def get_paper_abstract(paper):
+    try:
+        response = requests.get(paper.link)
+        response.raise_for_status()  # Check if the request was successful
+    except requests.RequestException as e:
+        print(f"Error fetching the paper page: {e}")
+        return ""
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    abstract_div = soup.find('div', text=lambda t: t and t.strip().startswith('Abstract'))
+
+    if abstract_div:
+        abstract_text = abstract_div.get_text(separator=' ', strip=True)
+        return abstract_text
+    abstract_div = soup.find('div', class_='abstract')  # Example: Find by class
+    if abstract_div:
+        abstract_text = abstract_div.get_text(separator=' ', strip=True)
+        return abstract_text
+
+    return ""
+
+
+def search_papers(keywords, num_results=20):
+    base_url = "https://scholar.google.com/scholar"
+    results_per_page = 10
+    global paper_list
+    paper_list = []
+    all_results = []
+    count_results=None
+    for start in range(0, num_results, results_per_page):
+        search_url = f"{base_url}?q={keywords}&start={start}"
+        response = requests.get(search_url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        if 'Our systems have detected' in str(soup):
+            continue
+        if not count_results:
+            count_div = soup.select_one('#gs_ab_md > div')
+            count_results = count_div.text if count_div else "No summary available"
+            count_results = count_results.split('about ')[1]
+
+        for item in soup.select('[data-lid]'):
+            title = item.select_one('.gs_rt').text
+            link = item.select_one('.gs_rt a')['href']
+            result = {'Title': title, 'Link': link}
+            all_results.append(result)
+            p = Paper(title, link=link)
+            paper_list.append(p)
+
+        if len(all_results) >= num_results:
+            break
+
+    all_results = all_results[:num_results]
+
+    resultdict = {'papers': all_results, 'count': count_results}
+    return resultdict
+
 def search_books(keywords=None, people=None):
     global book_df, current_stack
     start = time.time()
@@ -90,7 +158,6 @@ def search_books(keywords=None, people=None):
 
     batch_size = 1000
     num_batches = len(book_df) // batch_size + 1
-
     batches = [book_df[i*batch_size:(i+1)*batch_size] for i in range(num_batches)]
 
     results = []
@@ -102,13 +169,17 @@ def search_books(keywords=None, people=None):
         for future in futures:
             results.extend(future.result())
     current_stack = pl.DataFrame(results)
+    if len(results):
+        current_stack = current_stack.sort('Rating', descending=True)
+
+    result = current_stack.to_dicts()
     end = time.time()
     totaltime = end - start
     print(f"Total time for book search: {totaltime} seconds")
     print(f'Books found: {len(results)}')
-    for b in results:
-        print(f'{b["Title"]} - {b["People"]}')
-    return results
+    # for row in current_stack.iter_rows(named=True):
+    #     print(f'{row["Title"]} - {row["Rating"]}')
+    return result
 
 def search_books_query(keywords=None, people=None):
     books_ref = db.collection('books')
@@ -141,25 +212,33 @@ def search_books_query(keywords=None, people=None):
         return []
     return books
 
-def insert_books(books):
-    for book in books:
-        book_dict = book.to_dict()
-        db.collection('books').add(book_dict)
-    print(f'Books uploaded to books db: {len(books)}')
+def save_books_list(books):
+    try:
+        for book in books:
+            book_ref = db.collection(book_table).document()
+            book_ref.set(book)
+    except Exception as e:
+        print(f"Error saving books: {str(e)}")
 
+def reload_books():
+    global book_df
+    book_df = None
+    load_books_into_dataframe()
+    num = book_df.shape[0]
+    return num
 
+def delete_book(book):
+    book_title = book.get('Title')
+    global book_table
+    if not book_title:
+        return jsonify({"message": "Title is required"}), 400
+    books_ref = db.collection(book_table)
+    query = books_ref.where('Title', '==', book_title).stream()
+
+    for doc in query:
+        doc.reference.delete()
 def add_to_done_list(books):
     for book in books:
         book_dict = book.to_dict()
         db.collection('dones').add(book_dict)
     print(f'Books uploaded to firebase : {len(books)}')
-
-
-def get_recommendations(keywords):
-    pass
-    # with sqlite3.connect(DATABASE) as conn:
-    #     cursor = conn.cursor()
-    #     cursor.execute('SELECT * FROM books WHERE Summary LIKE ? OR Title LIKE ?',
-    #                    ('%' + keywords + '%', '%' + keywords + '%'))
-    #     recommendations = cursor.fetchall()
-    #     return recommendations
