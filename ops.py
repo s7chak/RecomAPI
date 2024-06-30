@@ -49,15 +49,15 @@ def load_books_into_dataframe(batch_size=10000):
     while True:
         batch_data = []
         last_doc = None
-        with tqdm(total=batch_size, desc="Loading batch", unit="books") as pbar:
-            for doc in docs:
-                book_data = doc.to_dict()
-                book_id = book_data.get('Title')  # Assuming 'ID' is the unique identifier
-                if book_id not in seen_books:
-                    batch_data.append(book_data)
-                    seen_books.add(book_id)
-                last_doc = doc
-                pbar.update(1)
+        # with tqdm(total=batch_size, desc="Loading batch", unit="books") as pbar:
+        for doc in docs:
+            book_data = doc.to_dict()
+            book_id = book_data.get('Title')  # Assuming 'ID' is the unique identifier
+            if book_id not in seen_books:
+                batch_data.append(book_data)
+                seen_books.add(book_id)
+            last_doc = doc
+                # pbar.update(1)
 
         if not batch_data:
             break
