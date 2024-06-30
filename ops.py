@@ -11,7 +11,7 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 from tqdm import tqdm
 from objects.Object import Paper
 #prod
-# cred = credentials.ApplicationDefault()
+cred = credentials.ApplicationDefault()
 book_df = None
 
 #local
