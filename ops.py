@@ -132,7 +132,7 @@ def search_papers(keywords, num_results=20):
         if not count_results:
             count_div = soup.select_one('#gs_ab_md > div')
             count_results = count_div.text if count_div else "No summary available"
-            count_results = count_results.split('about ')[1]
+            count_results = count_results.split('about')[1] if 'about' in count_results else count_results
 
         for item in soup.select('[data-lid]'):
             title = item.select_one('.gs_rt').text
