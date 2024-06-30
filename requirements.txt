@@ -4,6 +4,7 @@ flask-cors
 firebase-admin
 numpy
 polars
+bs4
 fuzzywuzzy
 tqdm
 gunicorn
